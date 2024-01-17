@@ -1,0 +1,39 @@
+<!-- estoque/templates/estoque/caixa.html -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Caixa</title>
+    <!-- Adicione outros estilos ou links CSS conforme necessário -->
+</head>
+<body>
+
+    <h1>Caixa</h1>
+    <p>Total em Caixa: R$ {{ total_caixa|floatformat:2 }}</p>
+    <p>Total a Receber: R$ {{ total_a_receber|floatformat:2 }}</p>
+
+    <table>
+        <thead>
+            <tr>
+                <th>Descrição</th>
+                <th>Cliente</th>
+                <th>Valor Total</th>
+                <th>Valor Pago</th>
+                <th>Status</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for venda in vendas %}
+                <tr>
+                    <td>{{ venda.descricao }}</td>
+                    <td>{{ venda.cliente_nome }}</td>
+                    <td>R$ {{ venda.valor_total|floatformat:2 }}</td>
+                    <td>R$ {{ venda.valor_pago|floatformat:2 }}</td>
+                    <td>{{ venda.status }}</td>
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</body>
+</html>
