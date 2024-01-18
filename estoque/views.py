@@ -1,8 +1,11 @@
 # estoque/views.py
+from decimal import Decimal
 from django.shortcuts import render, get_object_or_404, redirect
 from .models import Produto, TransacaoEstoque, Venda, ItemVenda
 # estoque/views.py
 from django.db.models import Sum
+
+from django.db import transaction
 
 def caixa(request):
     vendas = Venda.objects.all()
@@ -19,10 +22,14 @@ def detalhes_produto(request, produto_id):
     transacoes = TransacaoEstoque.objects.filter(produto=produto)
     return render(request, 'estoque/detalhes_produto.html', {'produto': produto, 'transacoes': transacoes})
 
+@transaction.atomic
 def registrar_venda(request):
     if request.method == 'POST':
-        produtos_ids = request.POST.getlist('produtos')
-        valor_pago = float(request.POST['valor_pago']) if request.POST['valor_pago'] else 0.0
+        print("Dados do formulário:")
+        print("Dados do formulário:", request.POST.dict())
+        
+        produtos_ids = request.POST.getlist('produtos_selecionados')
+        valor_pago = Decimal(request.POST.get('valor_pago', 0.0))
 
         venda = Venda(
             descricao=request.POST['descricao'],
@@ -34,44 +41,50 @@ def registrar_venda(request):
         )
         venda.save()
 
+        total_venda = 0
+
         for produto_id in produtos_ids:
-            quantidade = request.POST.get(f'quantidade_{produto_id}')
+            quantidade = int(request.POST.get(f'quantidade_{produto_id}', 0))
+            print(f"Produto ID: {produto_id}, Quantidade: {quantidade}")
 
             produto = get_object_or_404(Produto, pk=produto_id)
+            print(f"Detalhes do Produto: {produto.nome}, Preço: {produto.preco_venda}")
 
-            # Verifica se há estoque suficiente para realizar a venda
-            if produto.quantidade_estoque >= int(quantidade):
+            if produto.quantidade_estoque >= quantidade:
                 item_venda = ItemVenda(
                     venda=venda,
                     produto=produto,
                     quantidade=quantidade,
-                    subtotal=produto.preco_venda * int(quantidade)
+                    subtotal=Decimal(produto.preco_venda) * quantidade
                 )
                 item_venda.save()
 
-                # Subtrai a quantidade vendida do estoque
-                produto.quantidade_estoque -= int(quantidade)
+                total_venda += item_venda.subtotal
+
+                produto.quantidade_estoque -= quantidade
                 produto.save()
             else:
+                print("Entrou na condição de estoque")
                 return render(request, 'estoque/registrar_venda.html', {'produtos': Produto.objects.all(), 'erro_estoque': True})
 
-        # Lógica para calcular o valor total da venda e atualizar o registro de venda
-        venda.valor_total = sum(item.subtotal for item in venda.itemvenda_set.all())
+        venda.valor_total = total_venda
         venda.save()
 
-        # Lógica para definir o status da venda com base no valor pago
         if valor_pago == venda.valor_total:
             venda.status = 'pago'
         elif valor_pago > 0:
             venda.status = 'parcialmente_pago'
-        
+
         venda.save()
+
+        print("Venda salva com sucesso")
 
         return redirect('lista_vendas')
     else:
         produtos = Produto.objects.all()
         erro_estoque = request.GET.get('erro_estoque', False)
         return render(request, 'estoque/registrar_venda.html', {'produtos': produtos, 'erro_estoque': erro_estoque})
+
 
 
 def lista_vendas(request):

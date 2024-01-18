@@ -74,40 +74,50 @@
         <input type="text" name="cliente_nome" required>
 
         <label for="produtos">Produtos:</label>
-<select multiple name="produtos_selecionados[]" id="produtos_selecionados" required>
-  {% for produto in produtos %}
-    <option value="{{ produto.id }}">{{ produto.nome }} - R$ {{ produto.preco_venda }}</option>
-  {% endfor %}
-</select>
+        <select multiple name="produtos_selecionados" id="produtos_selecionados" required>
+          {% for produto in produtos %}
+            <option value="{{ produto.id }}">{{ produto.nome }} - R$ {{ produto.preco_venda }}</option>
+          {% endfor %}
+        </select>
 
-<div id="quantidades_produtos">
-  <!-- As quantidades serão adicionadas aqui dinamicamente com JavaScript -->
-</div>
-
-<script>
-  // Função para atualizar as quantidades de acordo com os produtos selecionados
-  document.getElementById('produtos_selecionados').addEventListener('change', function () {
-    var produtosSelecionados = this.selectedOptions;
-    var quantidadeDiv = document.getElementById('quantidades_produtos');
-
-    // Limpa as quantidades anteriores
-    quantidadeDiv.innerHTML = '';
-
-    // Adiciona campos de entrada para a quantidade de cada produto selecionado
-    for (var i = 0; i < produtosSelecionados.length; i++) {
-      var produtoSelecionado = produtosSelecionados[i].value;
-      quantidadeDiv.innerHTML += `
-        <label for="quantidade_${produtoSelecionado}">Quantidade para ${produtosSelecionados[i].text}:</label>
-        <input type="text" name="quantidade_${produtoSelecionado}" placeholder="Quantidade" required>
-      `;
-    }
-  });
-</script>
+        <div id="quantidades_produtos">
+          <!-- As quantidades serão adicionadas aqui dinamicamente com JavaScript -->
+        </div>
 
         <label for="valor_pago">Valor Pago:</label>
         <input type="text" name="valor_pago" required>
 
         <button type="submit">Registrar Venda</button>
     </form>
+
+    <script>
+        document.getElementById('produtos_selecionados').addEventListener('change', function () {
+    var produtosSelecionados = this.selectedOptions;
+    var quantidadeDiv = document.getElementById('quantidades_produtos');
+
+    // Limpar conteúdo anterior
+    quantidadeDiv.innerHTML = '';
+
+    for (var i = 0; i < produtosSelecionados.length; i++) {
+        var produtoSelecionado = produtosSelecionados[i].value;
+
+        // Criar elementos DOM
+        var label = document.createElement('label');
+        label.setAttribute('for', `quantidade_${produtoSelecionado}`);
+        label.textContent = `Quantidade para ${produtosSelecionados[i].text}:`;
+
+        var input = document.createElement('input');
+        input.setAttribute('type', 'number');
+        input.setAttribute('name', `quantidade_${produtoSelecionado}`);
+        input.setAttribute('placeholder', 'Quantidade');
+        input.setAttribute('required', 'true');
+
+        // Adicionar elementos ao container
+        quantidadeDiv.appendChild(label);
+        quantidadeDiv.appendChild(input);
+    }
+});
+
+    </script>
 </body>
 </html>
