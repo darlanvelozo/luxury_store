@@ -4,15 +4,32 @@ from django.shortcuts import render, get_object_or_404, redirect
 from .models import Produto, TransacaoEstoque, Venda, ItemVenda
 # estoque/views.py
 from django.db.models import Sum
-
+from django.db.models import Sum, F
 from django.db import transaction
 
 def caixa(request):
     vendas = Venda.objects.all()
-    total_caixa = Venda.objects.filter(status='pago').aggregate(total_caixa=Sum('valor_pago'))['total_caixa'] or 0
-    total_a_receber = Venda.objects.filter(status__in=['nao_pago', 'parcialmente_pago']).aggregate(total_a_receber=Sum('valor_total') - Sum('valor_pago'))['total_a_receber'] or 0
-    return render(request, 'estoque/caixa.html', {'vendas': vendas, 'total_caixa': total_caixa, 'total_a_receber': total_a_receber})
+    lucro_total = Decimal(0)
+    lucro_em_caixa = Decimal(0)
+    # Cálculo do Lucro Total
+    for produto in Produto.objects.all():
+        lucro_total += (produto.preco_venda - produto.preco_custo) * produto.quantidade_estoque
 
+    # Cálculo do Lucro em Caixa
+    for venda in vendas:
+        for item_venda in venda.itemvenda_set.all():
+            lucro_em_caixa += (item_venda.produto.preco_venda - item_venda.produto.preco_custo) * item_venda.quantidade
+    total_caixa = Venda.objects.aggregate(total_caixa=Sum('valor_pago'))['total_caixa'] or 0
+    total_a_receber = Venda.objects.filter(status__in=['nao_pago', 'parcialmente_pago']).aggregate(total_a_receber=Sum('valor_total') - Sum('valor_pago'))['total_a_receber'] or 0
+    context = {
+        'vendas': vendas,
+        'total_caixa': total_caixa,
+        'total_a_receber': total_a_receber,
+        'lucro_total': lucro_total,
+        'lucro_em_caixa': lucro_em_caixa,
+    }
+
+    return render(request, 'estoque/caixa.html', context)
 def lista_produtos(request):
     produtos = Produto.objects.all()
     return render(request, 'estoque/lista_produtos.html', {'produtos': produtos})

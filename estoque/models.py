@@ -2,6 +2,9 @@
 from decimal import Decimal
 from django.db import models
 from django.contrib.auth.models import User
+from django.utils import timezone
+
+
 class Categoria(models.Model):
     nome = models.CharField(max_length=255)
     def __str__(self):
@@ -21,7 +24,7 @@ class TransacaoEstoque(models.Model):
     produto = models.ForeignKey(Produto, on_delete=models.CASCADE)
     quantidade = models.IntegerField()
     tipo = models.CharField(max_length=10, choices=[('entrada', 'Entrada'), ('saida', 'Saída')])
-    data = models.DateTimeField(auto_now_add=True)
+    data = models.DateTimeField(default=timezone.now)
 
 class Venda(models.Model):
     descricao = models.TextField()
@@ -29,7 +32,7 @@ class Venda(models.Model):
     usuario = models.ForeignKey(User, on_delete=models.CASCADE)
     valor_total = models.DecimalField(max_digits=10, decimal_places=2, default=0)
     valor_pago = models.DecimalField(max_digits=10, decimal_places=2, default=0)
-    data_hora = models.DateTimeField(auto_now_add=True)
+    data_hora = models.DateTimeField(default=timezone.now)
     status = models.CharField(max_length=20, choices=[('pago', 'Pago'), ('parcialmente_pago', 'Parcialmente Pago'), ('nao_pago', 'Não Pago')])
 
     def save(self, *args, **kwargs):
